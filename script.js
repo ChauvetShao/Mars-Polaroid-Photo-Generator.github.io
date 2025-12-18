@@ -3,25 +3,62 @@ const ctx = canvas.getContext('2d');
 const uploadInput = document.getElementById('upload');
 const downloadBtn = document.getElementById('download-btn');
 const loading = document.getElementById('loading');
+const placeholder = document.getElementById('placeholder'); 
+const dropZone = document.getElementById('drop-zone'); 
 
 let currentImage = null;
 
-// Event Listeners
-uploadInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                currentImage = img;
-                generateMarsPolaroid();
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-});
+// 1. 拖拽交互效果 
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => { 
+    dropZone.addEventListener(eventName, preventDefaults, false); 
+}); 
+
+function preventDefaults(e) { 
+    e.preventDefault(); 
+    e.stopPropagation(); 
+} 
+
+['dragenter', 'dragover'].forEach(eventName => { 
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false); 
+}); 
+
+['dragleave', 'drop'].forEach(eventName => { 
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false); 
+}); 
+
+// 处理拖拽文件 
+dropZone.addEventListener('drop', handleDrop, false); 
+
+function handleDrop(e) { 
+    const dt = e.dataTransfer; 
+    const files = dt.files; 
+    handleFiles(files); 
+} 
+
+// 2. 修改原本的 Upload Event，提取公共逻辑 
+uploadInput.addEventListener('change', function(e) { 
+    handleFiles(e.target.files); 
+}); 
+
+function handleFiles(files) { 
+    if (files[0]) { 
+        const file = files[0]; 
+        const reader = new FileReader(); 
+        reader.onload = function(event) { 
+            const img = new Image(); 
+            img.onload = function() { 
+                currentImage = img; 
+                generateMarsPolaroid(); 
+                
+                // UI 状态更新：隐藏占位符，显示 Canvas 
+                if (placeholder) placeholder.style.display = 'none'; 
+                canvas.classList.add('active'); 
+            }; 
+            img.src = event.target.result; 
+        }; 
+        reader.readAsDataURL(file); 
+    } 
+} 
 
 downloadBtn.addEventListener('click', function() {
     const link = document.createElement('a');
@@ -46,7 +83,14 @@ const CONFIG = {
         mono: '24px "Space Mono", monospace',
         hand: '48px "LXGW WenKai", "Ma Shan Zheng", cursive'
     },
-    lyrics: [], // Will be loaded from lyrics.json
+    // Initialize with default lyrics to prevent crash if fetch is slow
+    lyrics: [
+        ["在孤独里", "我依然狂奔"],
+        ["星尘的尽头", "是你的回响"],
+        ["这里没有引力", "只有思念"],
+        ["第 19 个太阳日", "风沙很大"],
+        ["记录此刻", "永恒的红"]
+    ],
     assets: {
         flowers: Array.from({length: 16}, (_, i) => `resources/flower${i+1}.png`),
         flowerbeds: Array.from({length: 8}, (_, i) => `resources/flowerbed${i+1}.png`),
@@ -58,21 +102,14 @@ const CONFIG = {
 fetch('lyrics.json')
     .then(response => response.json())
     .then(data => {
-        if (data && data.polaroids) {
+        if (data && data.polaroids && data.polaroids.length > 0) {
             CONFIG.lyrics = data.polaroids.map(p => p.lines);
             console.log('Lyrics loaded:', CONFIG.lyrics.length);
         }
     })
     .catch(err => {
-        console.error('Failed to load lyrics, using backup:', err);
-        // Backup lyrics in case fetch fails
-        CONFIG.lyrics = [
-            ["在孤独里", "我依然狂奔"],
-            ["星尘的尽头", "是你的回响"],
-            ["这里没有引力", "只有思念"],
-            ["第 19 个太阳日", "风沙很大"],
-            ["记录此刻", "永恒的红"]
-        ];
+        console.error('Failed to load lyrics, using defaults:', err);
+        // Defaults are already set in CONFIG
     });
 
 function loadAsset(src) {
@@ -102,7 +139,8 @@ async function generateMarsPolaroid() {
         const PHOTO_HEIGHT = CONFIG.photoHeight;
 
         // 1. Pick and Load Random Resources (Collage Elements)
-        const flowerCount = Math.floor(randomRange(4, 7));
+        // Generate a "wreath" of flowers: many small flowers
+        const flowerCount = Math.floor(randomRange(40, 60));
         const flowerPaths = Array.from({length: flowerCount}, () => randomPick(CONFIG.assets.flowers));
         const treePath = randomPick(CONFIG.assets.trees);
         const flowerbedPath = randomPick(CONFIG.assets.flowerbeds);
@@ -341,28 +379,33 @@ function drawFrameFlowers(ctx, imgs, w, h) {
         const side = Math.floor(Math.random() * 4);
         let x, y;
         
+        // Add random scatter to create a "thick" wreath effect
+        // Scatter range +/- 15px around the border line
+        const scatter = () => randomRange(-15, 15);
+
         if (side === 0) { // Top
             x = randomRange(frameX, frameX + frameW);
-            y = frameY;
+            y = frameY + scatter();
         } else if (side === 1) { // Right
-            x = frameX + frameW;
+            x = frameX + frameW + scatter();
             y = randomRange(frameY, frameY + frameH);
         } else if (side === 2) { // Bottom
             x = randomRange(frameX, frameX + frameW);
-            y = frameY + frameH;
+            y = frameY + frameH + scatter();
         } else { // Left
-            x = frameX;
+            x = frameX + scatter();
             y = randomRange(frameY, frameY + frameH);
         }
         
-        const size = randomRange(40, 160);
+        // Smaller size for wreath effect: 30px to 80px
+        const size = randomRange(30, 80);
         
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(randomRange(0, Math.PI * 2));
         ctx.globalAlpha = 1;
-        ctx.shadowColor = 'rgba(0,0,0,0.2)';
-        ctx.shadowBlur = 5;
+        ctx.shadowColor = 'rgba(0,0,0,0.3)'; // Slightly darker shadow for depth
+        ctx.shadowBlur = 3;
         ctx.drawImage(img, -size/2, -size/2, size, size);
         ctx.restore();
     });

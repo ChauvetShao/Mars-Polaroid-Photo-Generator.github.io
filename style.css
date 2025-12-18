@@ -111,11 +111,43 @@ p {
     justify-content: center;
     position: relative;
     margin-bottom: 30px;
+    border: 2px dashed transparent;
+    transition: all 0.3s ease;
+    min-height: 400px;
+}
+
+.preview-area.highlight {
+    border-color: var(--mars-red);
+    background-color: rgba(140, 47, 47, 0.1);
+}
+
+.upload-placeholder {
+    border: 2px dashed var(--mars-red);
+    padding: 40px;
+    color: var(--mars-red);
+    font-family: var(--space-font);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: rgba(140, 47, 47, 0.05);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 canvas {
     max-width: 100%;
     height: auto;
+    display: none; /* Initially hidden until active */
+}
+
+canvas.active {
+    display: block;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
 }
 
 .loading-overlay {
