@@ -21,7 +21,8 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
-    background-image: radial-gradient(circle at center, #1a0505 0%, #000000 100%);
+    background-image: linear-gradient(135deg, #1a0505 0%, #bb1717 150%);
+    background-attachment: fixed;
 }
 
 .container {
@@ -37,15 +38,16 @@ header {
 }
 
 h1 {
-    color: var(--mars-red);
+    color: var(--paper-white);
     font-weight: 700;
     letter-spacing: 4px;
     text-transform: uppercase;
     margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(187, 23, 23, 0.5);
 }
 
 p {
-    color: #888;
+    color: rgba(245, 241, 235, 0.7);
     font-size: 0.9rem;
     letter-spacing: 1px;
 }
@@ -65,9 +67,9 @@ p {
 }
 
 .btn {
-    border: 1px solid var(--mars-red);
-    color: var(--mars-red);
-    background-color: transparent;
+    border: 1px solid var(--paper-white);
+    color: var(--paper-white);
+    background-color: rgba(187, 23, 23, 0.2);
     padding: 12px 30px;
     font-family: var(--space-font);
     font-weight: bold;
@@ -75,17 +77,19 @@ p {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 2px;
+    backdrop-filter: blur(5px);
 }
 
 .btn:hover {
-    background-color: var(--mars-red);
-    color: var(--paper-white);
+    background-color: var(--paper-white);
+    color: var(--mars-red);
+    box-shadow: 0 0 15px rgba(245, 241, 235, 0.3);
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background-color: #333;
+    background-color: rgba(0,0,0,0.2);
     border-color: #555;
     color: #888;
 }
@@ -100,10 +104,8 @@ p {
 }
 
 .preview-area {
-    background-color: #1a1a1a;
-    padding: 40px;
-    border: 1px dashed #333;
-    min-height: 600px;
+    background-color: transparent;
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -114,7 +116,6 @@ p {
 canvas {
     max-width: 100%;
     height: auto;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
 
 .loading-overlay {

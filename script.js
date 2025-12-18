@@ -4,6 +4,32 @@ const uploadInput = document.getElementById('upload');
 const downloadBtn = document.getElementById('download-btn');
 const loading = document.getElementById('loading');
 
+let currentImage = null;
+
+// Event Listeners
+uploadInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                currentImage = img;
+                generateMarsPolaroid();
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+downloadBtn.addEventListener('click', function() {
+    const link = document.createElement('a');
+    link.download = `mars-archive-${Date.now()}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+});
+
 // Config
 const CONFIG = {
     width: 900,
@@ -20,22 +46,34 @@ const CONFIG = {
         mono: '24px "Space Mono", monospace',
         hand: '48px "LXGW WenKai", "Ma Shan Zheng", cursive'
     },
-    lyrics: [
-        ["在孤独里", "我依然狂奔"],
-        ["星尘的尽头", "是你的回响"],
-        ["这里没有引力", "只有思念"],
-        ["第 19 个太阳日", "风沙很大"],
-        ["记录此刻", "永恒的红"],
-        ["致遥远的", "蓝色星球"],
-        ["漫游指南", "丢失在风里"],
-        ["不朽的", "是此刻的沉默"]
-    ],
+    lyrics: [], // Will be loaded from lyrics.json
     assets: {
         flowers: Array.from({length: 16}, (_, i) => `resources/flower${i+1}.png`),
         flowerbeds: Array.from({length: 8}, (_, i) => `resources/flowerbed${i+1}.png`),
         trees: ['resources/tree.png', 'resources/tree2.png']
     }
 };
+
+// Load lyrics from JSON
+fetch('lyrics.json')
+    .then(response => response.json())
+    .then(data => {
+        if (data && data.polaroids) {
+            CONFIG.lyrics = data.polaroids.map(p => p.lines);
+            console.log('Lyrics loaded:', CONFIG.lyrics.length);
+        }
+    })
+    .catch(err => {
+        console.error('Failed to load lyrics, using backup:', err);
+        // Backup lyrics in case fetch fails
+        CONFIG.lyrics = [
+            ["在孤独里", "我依然狂奔"],
+            ["星尘的尽头", "是你的回响"],
+            ["这里没有引力", "只有思念"],
+            ["第 19 个太阳日", "风沙很大"],
+            ["记录此刻", "永恒的红"]
+        ];
+    });
 
 function loadAsset(src) {
     return new Promise((resolve) => {
@@ -216,7 +254,7 @@ function drawHandwrittenLyrics(ctx, lines, w, startY) {
         ctx.fillText(line, 0, 0);
         ctx.restore();
 
-        y += 60; // Line height
+        y += 80; // Line height
     });
 }
 
@@ -273,21 +311,20 @@ function applyGrain(ctx, w, h) {
 }
 
 function drawTree(ctx, img, h) {
-    // Left aligned, anchored near bottom of photo area
-    const scale = randomRange(0.6, 0.9);
-    const w = img.width * scale;
-    const renderH = img.height * scale;
+    // 固定最大宽度，保持原始宽高比
+    const maxWidth = 90;
     
-    const maxWidth = 250;
-    const renderW = Math.min(w, maxWidth);
+    // 计算缩放比例
+    const scale = Math.min(maxWidth / img.width, 1); // 不超过原图大小
+    const renderW = img.width * scale;
+    const renderH = img.height * scale;  // 按相同比例缩放高度
     
-    const x = -20; // Slightly off canvas
-    const y = h - renderH - 100; // Anchored
+    // 定位：左下角，稍微超出画布左侧
+    const x = -20;
+    const y = h - renderH - 100;
     
     ctx.save();
-    ctx.globalAlpha = 0.85;
-    // Darken tree to match new style? Or keep original?
-    // Let's add a sepia filter to blend with "Old Paper"
+    ctx.globalAlpha = 1;
     ctx.filter = 'sepia(0.5) contrast(1.2)';
     ctx.drawImage(img, x, y, renderW, renderH);
     ctx.restore();
@@ -318,12 +355,12 @@ function drawFrameFlowers(ctx, imgs, w, h) {
             y = randomRange(frameY, frameY + frameH);
         }
         
-        const size = randomRange(60, 100);
+        const size = randomRange(40, 160);
         
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(randomRange(0, Math.PI * 2));
-        ctx.globalAlpha = 0.8;
+        ctx.globalAlpha = 1;
         ctx.shadowColor = 'rgba(0,0,0,0.2)';
         ctx.shadowBlur = 5;
         ctx.drawImage(img, -size/2, -size/2, size, size);
@@ -331,17 +368,41 @@ function drawFrameFlowers(ctx, imgs, w, h) {
     });
 }
 
+/**
+ * 绘制底部花坛装饰（固定左下角版本）
+ * 
+ * 花坛固定在画布左下角，宽度限制在300px以内
+ * 
+ * @param {CanvasRenderingContext2D} ctx - 画布的2D绘图上下文
+ * @param {HTMLImageElement} img - 要绘制的花坛图像对象
+ * @param {number} w - 画布的总宽度
+ * @param {number} h - 画布的总高度
+ */
 function drawBottomFlowerbed(ctx, img, w, h) {
-    const renderW = w;
+    // 固定宽度：300px（可以根据需要调整）
+    const fixedWidth = 300;
+    
+    // 保持原始宽高比计算高度
+    const renderW = Math.min(fixedWidth, img.width);  // 取较小值，避免放大模糊
     const renderH = img.height * (renderW / img.width);
     
-    const x = 0;
-    const y = h - renderH;
+    // 固定位置：左下角
+    const x = 0;  // 左侧对齐
+    const y = h - renderH;  // 底部对齐
     
+    // 保存当前画布状态
     ctx.save();
-    ctx.globalAlpha = 0.9;
+    
+    // 设置透明度
+    ctx.globalAlpha = 1;
+    
+    // 应用棕褐色滤镜
     ctx.filter = 'sepia(0.3)';
+    
+    // 在固定位置绘制花坛
     ctx.drawImage(img, x, y, renderW, renderH);
+    
+    // 恢复画布状态
     ctx.restore();
 }
 
