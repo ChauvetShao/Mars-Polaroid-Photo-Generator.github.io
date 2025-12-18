@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars Polaroid | 火星拍立得</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://npm.elemecdn.com/lxgw-wenkai-screen-webfont/style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MARS ARCHIVE</h1>
+            <p>火星记录生成器</p>
+        </header>
+
+        <main>
+            <div class="controls">
+                <div class="upload-btn-wrapper">
+                    <button class="btn">上传照片 Upload</button>
+                    <input type="file" id="upload" accept="image/*" />
+                </div>
+                <button id="download-btn" class="btn secondary" disabled>保存 Save</button>
+            </div>
+
+            <div class="preview-area">
+                <canvas id="canvas"></canvas>
+                <div id="loading" class="loading-overlay hidden">
+                    <div class="spinner"></div>
+                    <p>TRANSMITTING...</p>
+                </div>
+            </div>
+            
+            <div class="tips">
+                <p>💡 每次上传都会生成独一无二的火星痕迹</p>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
